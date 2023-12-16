@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 
@@ -15,13 +16,22 @@ const readData = () => {
   }
 };
 
-// Schreibt die Daten in die JSON-Datei
 const writeData = (data) => {
   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
 };
 
-// Hinzufügen eines neuen Redirect-Eintrags
-app.post('/entry', (req, res) => {
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = process.env.BEARER_TOKEN;
+
+  if (authHeader && authHeader.split(' ')[0] === 'Bearer' && authHeader.split(' ')[1] === token) {
+    next();
+  } else {
+    return res.status(401).send('Unauthorized');
+  }
+};
+
+app.post('/entry', authenticate, (req, res) => {
   const { slug, url } = req.body;
 
   if (!slug || !url) {
@@ -35,7 +45,6 @@ app.post('/entry', (req, res) => {
   res.status(201).send(`Redirect für ${slug} hinzugefügt.`);
 });
 
-// Umleitung basierend auf dem Slug
 app.get('/:slug', (req, res) => {
   const { slug } = req.params;
   const data = readData();
@@ -47,7 +56,6 @@ app.get('/:slug', (req, res) => {
   }
 });
 
-// Starten des Servers
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server läuft auf Port ${PORT}`);
