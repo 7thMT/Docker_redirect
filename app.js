@@ -45,6 +45,11 @@ app.post('/entry', authenticate, (req, res) => {
   res.status(201).send(`Redirect für ${slug} hinzugefügt.`);
 });
 
+app.get('/entries', authenticate, (req, res) => {
+  const data = readData();
+  res.json(data);
+});
+
 app.get('/:slug', (req, res) => {
   const { slug } = req.params;
   const data = readData();
@@ -55,6 +60,20 @@ app.get('/:slug', (req, res) => {
     return res.status(404).send('Slug nicht gefunden.');
   }
 });
+
+app.delete('/entry/:slug', authenticate, (req, res) => {
+  const { slug } = req.params;
+  let data = readData();
+
+  if (data[slug]) {
+    delete data[slug];
+    writeData(data);
+    res.send(`Eintrag für ${slug} gelöscht`);
+  } else {
+    res.status(404).send('Slug nicht gefunden.');
+  }
+});
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
